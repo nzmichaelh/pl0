@@ -22,7 +22,7 @@ class TokenStream:
                 names.append(name)
             else:
                 break
-        stack = ': '.join(reversed(names))
+        stack = ': '.join(reversed(names[1:]))
         print('{}: Took {}'.format(stack, token))
 
     def advance(self):
@@ -30,6 +30,9 @@ class TokenStream:
 
     def peek(self, offset):
         return self.tokens[self.at + offset]
+
+    def prev(self):
+        return self.tokens[self.at - 1]
 
     def accept(self, *vals, nolog=False):
         token = self.tokens[self.at]
@@ -71,16 +74,17 @@ class Node:
         setattr(self, name, value)
         self.children[name] = value
 
-    def append(self, value):
-        self.set('_{}'.format(len(self.children)), value)
+    def append(self, *vals):
+        for value in vals:
+            self.set('_{}'.format(len(self.children)), value)
 
     def dump(self, name='', indent=0):
         print('{}{}: {}'.format('  ' * indent, name, self))
         for name, child in self.children.items():
-            if isinstance(child, str) or child is None:
-                print('{}{}: {}'.format('  ' * (indent + 1), name, child))
-            else:
+            if child and isinstance(child, Node):
                 child.dump(name, indent + 1)
+            else:
+                print('{}{}: {}'.format('  ' * (indent + 1), name, child))
 
 
 class Consts(Node, dict):
@@ -102,11 +106,8 @@ class Statement(Node):
 class Assign(Statement):
     def __init__(self, ident, expr):
         super().__init__()
-        self.ident = ident
-        self.expr = expr
-
-    def __repr__(self):
-        return '<Assign {} := {}>'.format(self.ident, self.expr)
+        self.set('ident', ident)
+        self.set('expr', expr)
 
 
 class Call(Statement):
@@ -121,11 +122,47 @@ class Write(Statement):
         self.expression = expression
 
 
+class While(Statement):
+    def __init__(self, condition, statement):
+        super().__init__()
+        self.set('condition', condition)
+        self.set('statement', statement)
+
+
+class If(Statement):
+    def __init__(self, condition, statement):
+        super().__init__()
+        self.set('condition', condition)
+        self.set('statement', statement)
+
+
+class Odd(Node):
+    def __init__(self, expression):
+        super().__init__()
+        self.set('expression', expression)
+
+
+class Condition(Node):
+    def __init__(self, left, code, right):
+        super().__init__()
+        self.set('left', left)
+        self.set('code', code)
+        self.set('right', right)
+
+
 class Procedures(Node):
     pass
 
 
 class Procedure(Node):
+    pass
+
+
+class Expression(Node):
+    pass
+
+
+class Term(Node):
     pass
 
 
@@ -166,21 +203,28 @@ def parse_factor(stream):
     if term:
         return term
     stream.expect('(')
-    parse_expression(stream)
+    expression = parse_expression(stream)
     stream.expect(')')
+    return expression
 
 
 def parse_term(stream):
+    term = Term()
     factor = parse_factor(stream)
+    term.append(factor)
     while stream.accept('*', '/'):
-        parse_factor(stream)
+        term.append(stream.prev(), parse_factor(stream))
+    return term
 
 
 def parse_expression(stream):
-    unary = stream.accept('+', '-')
-    term = parse_term(stream)
+    expression = Expression()
+    expression.set('unary', stream.accept('+', '-'))
+    expression.append(parse_term(stream))
     while stream.accept('+', '-'):
-        parse_term(stream)
+        expression.append(stream.prev())
+        expression.append(parse_term(stream))
+    return expression
 
 
 def parse_compound(stream):
@@ -194,10 +238,10 @@ def parse_compound(stream):
 
 def parse_condition(stream):
     if stream.accept('odd'):
-        return parse_expression(stream)
-    parse_expression(stream)
-    stream.expect(lex.Token)
-    parse_expression(stream)
+        return Odd(parse_expression(stream))
+    return Condition(
+        parse_expression(stream), stream.expect(lex.Token),
+        parse_expression(stream))
 
 
 def parse_statement(stream):
@@ -211,13 +255,13 @@ def parse_statement(stream):
     if stream.accept('begin'):
         return parse_compound(stream)
     if stream.accept('if'):
-        parse_condition(stream)
-        stream.expect('then')
-        return parse_statement(stream)
+        cond, _, statement = parse_condition(stream), stream.expect(
+            'then'), parse_statement(stream)
+        return If(cond, statement)
     if stream.accept('while'):
-        parse_condition(stream)
-        stream.expect('do')
-        return parse_statement(stream)
+        cond, _, statement = parse_condition(stream), stream.expect(
+            'do'), parse_statement(stream)
+        return While(cond, statement)
     return None
 
 

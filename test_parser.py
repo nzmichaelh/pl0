@@ -95,6 +95,14 @@ BEGIN
 END.
 """
 
+COMPOUND = """
+VAR y;
+BEGIN
+y := 1+2*5;
+y := 2*5+1;
+END.
+"""
+
 
 def run(src):
     p = parser.parse(lex.lex(src))
@@ -102,9 +110,17 @@ def run(src):
     return p
 
 
-def xtest():
+def test():
     assert run(TEST1) != None
 
 
 def test_squares():
+    assert run(SQUARES) != None
+
+
+def test_muldiv():
     assert run(MULDIV) != None
+
+
+def test_compound():
+    assert run(COMPOUND) != None

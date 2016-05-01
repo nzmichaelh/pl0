@@ -13,6 +13,9 @@ class Token:
         return '<{} {}:{}>'.format(self.__class__.__name__, repr(self.val),
                                    self.line)
 
+    def typename(self):
+        return self.__class__.__name__.lower()
+
 
 class Ident(Token):
     pass

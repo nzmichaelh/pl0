@@ -86,6 +86,9 @@ class Node:
             else:
                 print('{}{}: {}'.format('  ' * (indent + 1), name, child))
 
+    def typename(self):
+        return self.__class__.__name__.lower()
+
 
 class Consts(Node, dict):
     pass
@@ -95,8 +98,21 @@ class Vars(Node, dict):
     pass
 
 
+class List(Node):
+    def __init__(self, items):
+        super().__init__()
+        for item in items:
+            self.append(item)
+
+
 class Block(Node):
     pass
+
+
+class Program(Node):
+    def __init__(self, block):
+        super().__init__()
+        self.set('block', block)
 
 
 class Statement(Node):
@@ -210,20 +226,26 @@ def parse_factor(stream):
 
 def parse_term(stream):
     term = Term()
-    factor = parse_factor(stream)
-    term.append(factor)
+    factors, operations = [], []
+    factors.append(parse_factor(stream))
     while stream.accept('*', '/'):
-        term.append(stream.prev(), parse_factor(stream))
+        operations.append(stream.prev())
+        factors.append(parse_factor(stream))
+    term.set('factors', List(factors))
+    term.set('operations', List(operations))
     return term
 
 
 def parse_expression(stream):
     expression = Expression()
     expression.set('unary', stream.accept('+', '-'))
-    expression.append(parse_term(stream))
+    terms, operations = [], []
+    terms.append(parse_term(stream))
     while stream.accept('+', '-'):
-        expression.append(stream.prev())
-        expression.append(parse_term(stream))
+        operations.append(stream.prev())
+        terms.append(parse_term(stream))
+    expression.set('terms', List(terms))
+    expression.set('operations', List(operations))
     return expression
 
 
@@ -296,9 +318,8 @@ def parse(tokens):
     stream = TokenStream(list(tokens))
 
     stream.advance()
-    b = parse_block(stream)
-    stream.expect('.')
-    return b
+    block, _ = parse_block(stream), stream.expect('.')
+    return Program(block)
 
 
 if __name__ == '__main__':

@@ -23,7 +23,7 @@ class TokenStream:
             else:
                 break
         stack = ': '.join(reversed(names[1:]))
-        print('{}: Took {}'.format(stack, token))
+        #print('{}: Took {}'.format(stack, token))
 
     def advance(self):
         self.at += 1
@@ -79,12 +79,13 @@ class Node:
             self.set('_{}'.format(len(self.children)), value)
 
     def dump(self, name='', indent=0):
-        print('{}{}: {}'.format('  ' * indent, name, self))
+        print('// {}{}: {}'.format('  ' * indent, name, self))
         for name, child in self.children.items():
             if child and isinstance(child, Node):
                 child.dump(name, indent + 1)
             else:
-                print('{}{}: {}'.format('  ' * (indent + 1), name, child))
+                pass
+                print('// {}{}: {}'.format('  ' * (indent + 1), name, child))
 
     def typename(self):
         return self.__class__.__name__.lower()
@@ -129,13 +130,13 @@ class Assign(Statement):
 class Call(Statement):
     def __init__(self, ident):
         super().__init__()
-        self.ident = ident
+        self.set('ident', ident)
 
 
 class Write(Statement):
     def __init__(self, expression):
         super().__init__()
-        self.expression = expression
+        self.set('expression', expression)
 
 
 class While(Statement):
@@ -302,8 +303,14 @@ def parse_block(stream):
 
     if stream.accept('const'):
         block.set('consts', parse_consts(stream))
+    else:
+        block.set('consts', Consts())
+        
     if stream.accept('var'):
         block.set('vars', parse_vars(stream))
+    else:
+        block.set('vars', Vars())
+
     procedures = Procedures()
     while stream.accept('procedure'):
         procedure = parse_procedure(stream)

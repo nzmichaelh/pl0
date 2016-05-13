@@ -305,7 +305,7 @@ def parse_block(stream):
         block.set('consts', parse_consts(stream))
     else:
         block.set('consts', Consts())
-        
+
     if stream.accept('var'):
         block.set('vars', parse_vars(stream))
     else:

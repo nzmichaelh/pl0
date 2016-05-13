@@ -3,6 +3,7 @@ from . import parser
 
 import sys
 
+
 class Emitter:
     def __init__(self):
         self.idx = 0
@@ -64,7 +65,7 @@ class Emitter:
         self.dispatch(node.statement)
         self.cmd('goto while{};'.format(idx))
         self.cmd('while{}end: ;'.format(idx))
-        
+
     def emit_if(self, node):
         idx = self.next_id()
         self.dispatch(node.condition)
@@ -75,7 +76,7 @@ class Emitter:
     def emit_odd(self, node):
         self.dispatch(node.expression)
         self.cmd('push(pop() & 1);')
-        
+
     def emit_condition(self, cond):
         self.dispatch(cond.left)
         self.dispatch(cond.right)
@@ -119,7 +120,9 @@ class Emitter:
         self.emit2('>')
 
     def emit2(self, cmd):
-        self.cmd('{{ int_t right = pop(); int_t left = pop(); push(left {} right); }}'.format(cmd))
+        self.cmd(
+            '{{ int_t right = pop(); int_t left = pop(); push(left {} right); }}'.format(
+                cmd))
 
     def dispatch_children(self, node):
         for child in node.children.values():
@@ -139,8 +142,9 @@ class Emitter:
         name = op.val
         if name == '#':
             name = '!='
-            
+
         self.emit2(name)
+
 
 def emit(program):
     program.dump('top')

@@ -1,4 +1,5 @@
-from . import parser, lex
+import pl0.lex
+import pl0.parser
 
 TEST1 = """
 const foo = 5, baz = 6;
@@ -105,7 +106,7 @@ END.
 
 
 def run(src):
-    p = parser.parse(lex.lex(src))
+    p = pl0.parser.parse(pl0.lex.lex(src))
     p.dump('top')
     return p
 

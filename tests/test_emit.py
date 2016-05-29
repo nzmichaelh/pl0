@@ -1,6 +1,6 @@
-from . import emit
-from . import lex
-from . import parser
+import pl0.emit
+import pl0.lex
+import pl0.parser
 
 COMPOUND = """
 CONST z = 10;
@@ -14,7 +14,7 @@ END.
 
 
 def run(src):
-    emit.emit(parser.parse(lex.lex(src)))
+    pl0.emit.emit(pl0.parser.parse(pl0.lex.lex(src)))
     return True
 
 

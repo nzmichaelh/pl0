@@ -1,8 +1,8 @@
-from . import lex
+import pl0.lex
 
 
 def run(src):
-    return [x.val for x in lex.lex(src)]
+    return [x.val for x in pl0.lex.lex(src)]
 
 
 def test():

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-import pl0.emit
+import pl0.ir
 import pl0.lex
 import pl0.parser
 
@@ -28,7 +28,7 @@ END.
 
 
 def run(src):
-    pl0.emit.emit(pl0.parser.parse(pl0.lex.lex(src)))
+    pl0.ir.ir(pl0.parser.parse(pl0.lex.lex(src)))
     return True
 
 

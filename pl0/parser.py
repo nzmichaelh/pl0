@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from . import lex
-
 import collections
-import sys
 import inspect
+import sys
+
+from . import lex
 
 
 class TokenStream:
@@ -36,8 +36,6 @@ class TokenStream:
                 names.append(name)
             else:
                 break
-        stack = ': '.join(reversed(names[1:]))
-        #print('{}: Took {}'.format(stack, token))
 
     def advance(self):
         self.at += 1
@@ -61,8 +59,7 @@ class TokenStream:
                 if not nolog:
                     self.log(token)
                 return token
-        else:
-            return None
+        return None
 
     def expect(self, *vals):
         tokens = []
@@ -98,7 +95,6 @@ class Node:
             if child and isinstance(child, Node):
                 child.dump(name, indent + 1)
             else:
-                pass
                 print('// {}{}: {}'.format('  ' * (indent + 1), name, child))
 
     def typename(self):
@@ -211,15 +207,15 @@ def parse_consts(stream):
 
 
 def parse_vars(stream):
-    vars = Vars()
+    variables = Vars()
     name = stream.expect(lex.Ident)
-    vars[name] = True
+    variables[name] = True
 
     while stream.accept(','):
         name = stream.expect(lex.Ident)
-        vars[name] = True
+        variables[name] = True
     stream.expect(';')
-    return vars
+    return variables
 
 
 class Compound(Statement):
@@ -343,6 +339,10 @@ def parse(tokens):
     return Program(block)
 
 
+def main():
+    ast = parse(lex.lex(sys.stdin.read()))
+    ast.dump('top')
+
+
 if __name__ == '__main__':
-    b = parse(lex.lex(sys.stdin.read()))
-    b.dump('top')
+    main()

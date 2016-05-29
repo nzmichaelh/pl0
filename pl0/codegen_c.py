@@ -14,12 +14,12 @@
 #
 """A code generator that emits C code."""
 
+import sys
+
 from . import lex
 from . import parser
 from . import ir
 from . import util
-
-import sys
 
 
 class CGenerator:
@@ -71,9 +71,10 @@ class CGenerator:
     def emit_goto(self, goto):
         self.cmd('goto {};'.format(goto.val.val))
 
-    def emit_operation(self, op):
-        self.cmd('{} = {} {} {};'.format(op.result.lvalue(), op.left.rvalue(),
-                                         op.op, op.right.rvalue()))
+    def emit_operation(self, operation):
+        self.cmd('{} = {} {} {};'.format(operation.result.lvalue(
+        ), operation.left.rvalue(), operation.operation,
+                                         operation.right.rvalue()))
 
     def emit_call(self, call):
         if call.arg is not None:
@@ -96,6 +97,10 @@ def codegen(program):
     gen = cgen.dispatch(irf)
 
 
-if __name__ == '__main__':
+def main():
     program = parser.parse(lex.lex(sys.stdin.read()))
     codegen(program)
+
+
+if __name__ == '__main__':
+    main()

@@ -12,18 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+"""Three address intermediate representation."""
+
+import sys
+from typing import Union
+import typecheck as tc
+
 from . import lex
 from . import parser
 from . import util
-
-import sys
-import typecheck as tc
-from typing import Union
 
 
 class Operand(util.ReprMixin):
     def lvalue(self):
         return self.rvalue()
+
+    def rvalue(self):
+        raise NotImplementedError()
 
 
 class Number(Operand):
@@ -71,10 +76,14 @@ class Operation(Emittable):
     __slots__ = 'result', 'left', 'op', 'right'
 
     @tc.typecheck
-    def __init__(self, result: Operand, left: Operand, op: str, right=None):
+    def __init__(self,
+                 result: Operand,
+                 left: Operand,
+                 operation: str,
+                 right=None):
         self.result = result
         self.left = left
-        self.op = op
+        self.operation = operation
         self.right = right
 
 
@@ -165,9 +174,9 @@ class IRGenerator:
         return self.idx
 
     def next_intermediate(self):
-        op = Intermediate(self.next_id())
-        self.cmd(Reserve(op.rvalue()))
-        return op
+        operand = Intermediate(self.next_id())
+        self.cmd(Reserve(operand.rvalue()))
+        return operand
 
     def emit_program(self, program):
         self.program = Program(program)
@@ -207,7 +216,6 @@ class IRGenerator:
     def emit_term(self, term):
         factors = [self.dispatch(x) for x in term.factors.children.values()]
         operations = list(term.operations.children.values())
-        cmds = []
 
         for operation in operations:
             left, right = factors[0], factors[1]
@@ -265,12 +273,12 @@ class IRGenerator:
         self.dispatch(statement)
         self.cmd(Exit())
 
-    def emit_vars(self, vars):
-        for var in vars:
+    def emit_vars(self, variables):
+        for var in variables:
             self.cmd(Reserve(var.val))
 
-    def emit_consts(self, vars):
-        for name, val in vars.items():
+    def emit_consts(self, consts):
+        for name, val in consts.items():
             self.cmd(Const(name.val, val.val))
 
     def enter_procedure(self, proc):
@@ -283,8 +291,8 @@ class IRGenerator:
         self.cmd(Call(node.ident.val))
 
     def emit_assign(self, assign):
-        op = self.dispatch(assign.expr)
-        self.cmd(Assign(Variable(assign.ident.val), op, '='))
+        operand = self.dispatch(assign.expr)
+        self.cmd(Assign(Variable(assign.ident.val), operand, '='))
 
     def emit_number(self, token):
         return Number(token.val)
@@ -293,8 +301,8 @@ class IRGenerator:
         return Variable(token.val)
 
     def emit_write(self, node):
-        op = self.dispatch(node.expression)
-        self.cmd(Call('write', op.rvalue()))
+        operand = self.dispatch(node.expression)
+        self.cmd(Call('write', operand.rvalue()))
 
     def emit_while(self, node):
         idx = self.next_id()
@@ -303,8 +311,8 @@ class IRGenerator:
         end = Label('while{}end'.format(idx))
 
         self.cmd(top)
-        op = self.dispatch(node.condition)
-        self.cmd(If(op.rvalue(), end))
+        operand = self.dispatch(node.condition)
+        self.cmd(If(operand.rvalue(), end))
         self.dispatch(node.statement)
         self.cmd(Goto(top))
         self.cmd(end)
@@ -331,10 +339,14 @@ def ir(program):
     gen = irgen.dispatch(program)
 
     print('// {}'.format(gen.name))
-    for op in gen.operations:
-        print(op)
+    for operation in gen.operations:
+        print(operation)
+
+
+def main():
+    program = parser.parse(lex.lex(sys.stdin.read()))
+    ir(program)
 
 
 if __name__ == '__main__':
-    program = parser.parse(lex.lex(sys.stdin.read()))
-    ir(program)
+    main()

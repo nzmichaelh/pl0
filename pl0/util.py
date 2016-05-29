@@ -12,8 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
+
 class ReprMixin:
     """Add a __repr__ that uses __slots__."""
+
     def __repr__(self):
         assert self.__slots__ is not None, "{} doesn't define __slots__".format(
             self.__class__.__name__)

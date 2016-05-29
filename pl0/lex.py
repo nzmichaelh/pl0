@@ -111,6 +111,10 @@ def lex(src):
                 yield Token(ch, line)
 
 
-if __name__ == '__main__':
+def main():
     for token in lex(sys.stdin.read()):
         print(token)
+
+
+if __name__ == '__main__':
+    main()

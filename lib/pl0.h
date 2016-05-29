@@ -1,28 +1,21 @@
+// Copyright 2016 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+#pragma once
+
 typedef int int_t;
 
-void push(int_t v);
-int_t pop();
-void write(int_t v);
+void write(int_t val);
 void run();
-
-void ldci(int_t val);
-void ldl(const int_t* p);
-void stl(int_t* p);
-void cup(void (*func)());
-void csp(void (*func)(int_t v));
-
-void adi();
-void sbi();
-void mpi();
-void dvi();
-void leqi();
-void geqi();
-void gti();
-void lti();
-void neqi();
-
-void odd();
-
-#define LABEL(_x) _x:
-#define FJP(_x) if (!pop()) goto _x
-#define UJP(_x) goto _x

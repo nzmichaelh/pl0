@@ -1,0 +1,35 @@
+# This program calculates the first K values of the fibonacci sequence.
+#
+CONST K = 100;
+
+VAR m, n, k, count, runs;
+
+PROCEDURE fib;
+BEGIN
+    m := 1;
+    n := 1;
+    k := 1;
+    count := 0;
+    
+    WHILE count <= K DO
+    BEGIN
+        k := n;
+        n := m + n;
+        m := k;
+        
+        count := count + 1
+    END
+END;
+
+PROCEDURE bench;
+BEGIN
+   runs := 1000000;
+   WHILE runs > 0 DO BEGIN
+      CALL fib;
+      runs := runs - 1;
+   END;
+   # Expect: 1445263496
+   ! k;
+END;
+
+CALL bench.

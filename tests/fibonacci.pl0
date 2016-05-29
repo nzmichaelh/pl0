@@ -1,0 +1,26 @@
+# This program calculates the first K values of the fibonacci sequence.
+#
+# Expect: 1 1 2 3 5 8 13 21 34 55 89 144 233 377 610 987 1597 2584 4181 6765 10946
+#
+
+CONST K = 20;
+
+VAR m, n, k, count;
+
+BEGIN
+    m := 1;
+    n := 1;
+    k := 1;
+    count := 0;
+    
+    WHILE count <= K DO
+    BEGIN
+        ! k;
+        
+        k := n;
+        n := m + n;
+        m := k;
+        
+        count := count + 1
+    END
+END.

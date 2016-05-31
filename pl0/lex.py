@@ -13,19 +13,18 @@
 # limitations under the License.
 #
 import sys
+from . import util
 
 KEYWORDS = 'const var procedure call begin end if then while do odd'.lower(
 ).split()
 
 
-class Token:
+class Token(util.ReprMixin):
+    __slots__ = 'val', 'line'
+    
     def __init__(self, val, line):
         self.val = val
         self.line = line
-
-    def __repr__(self):
-        return '<{} {}:{}>'.format(self.__class__.__name__, repr(self.val),
-                                   self.line)
 
     def typename(self):
         return self.__class__.__name__.lower()

@@ -62,10 +62,11 @@ class Variable(Operand):
 
 
 class Note(util.ReprMixin):
-    __slots__ = 'text',
+    __slots__ = 'text', 'indent'
 
-    def __init__(self, text):
+    def __init__(self, text, indent):
         self.text = text
+        self.indent = indent
 
 
 class Emittable(util.ReprMixin):
@@ -73,7 +74,7 @@ class Emittable(util.ReprMixin):
 
 
 class Operation(Emittable):
-    __slots__ = 'result', 'left', 'op', 'right'
+    __slots__ = 'result', 'left', 'operation', 'right'
 
     @tc.typecheck
     def __init__(self,
@@ -130,8 +131,8 @@ class Label(SingleValueEmittable):
     pass
 
 
-class Enter(SingleValueEmittable):
-    pass
+class Enter(Emittable):
+    __slots__ = ()
 
 
 class Exit(Emittable):
@@ -158,16 +159,37 @@ class Goto(SingleValueEmittable):
     pass
 
 
-class Program:
+class Variables(util.Node):
+    pass
+
+
+class Constants(util.Node):
+    pass
+
+
+class Block(util.Node):
     def __init__(self, name):
+        super().__init__()
         self.name = name
+        self.vars_ = Variables()
+        self.consts = Constants()
         self.operations = []
 
+
+class Program(util.Node):
+    def __init__(self, name):
+        super().__init__()
+        self.name = name
+        self.blocks = []
+        
 
 class IRGenerator:
     def __init__(self):
         self.idx = 0
         self.program = None
+        self.blocks = []
+        self.indent = 0
+        self.proc = None
 
     def next_id(self):
         self.idx += 1
@@ -175,20 +197,25 @@ class IRGenerator:
 
     def next_intermediate(self):
         operand = Intermediate(self.next_id())
-        self.cmd(Reserve(operand.rvalue()))
+        self.blocks[-1].vars_.append(operand)
         return operand
 
     def emit_program(self, program):
         self.program = Program(program)
         self.start_program(program)
-        self.dispatch(program.block.consts)
-        self.dispatch(program.block.vars)
-        self.dispatch(program.block.procedures)
-        self.emit_body(program.block.statement)
+        self.dispatch_children(program)
+        self.end_program(program)
         return self.program
 
     def emit_block(self, block):
-        return self.dispatch_children(block)
+        b = Block(self.proc.name if self.proc else None)
+        self.blocks.append(b)
+        self.enter_block(block)
+        result = self.dispatch_children(block)
+        self.exit_block(block)
+        self.blocks.pop()
+        self.program.blocks.append(b)
+        return result
 
     def emit_procedures(self, node):
         return self.dispatch_children(node)
@@ -197,9 +224,8 @@ class IRGenerator:
         return self.dispatch_children(node)
 
     def emit_procedure(self, proc):
-        self.enter_procedure(proc)
-        proc = self.dispatch_children(proc)
-        self.exit_procedure(proc)
+        self.proc = proc
+        return self.dispatch_children(proc)
 
     def emit_expression(self, expression):
         terms = [self.dispatch(x) for x in expression.terms.children.values()]
@@ -246,26 +272,31 @@ class IRGenerator:
     def dispatch(self, node) -> Union[Operation, Variable, Intermediate,
                                       Number, Program, None]:
         if node is None:
-            self.note('Skipping None')
             return None
         target = 'emit_{}'.format(node.typename())
         self.note('Invoking {}({})'.format(target, node))
-        return getattr(self, target)(node)
+        self.indent += 1
+        result = getattr(self, target)(node)
+        self.indent -= 1
+        return result
 
     @tc.typecheck
     def header(self, msg: str):
-        self.program.operations.append(msg)
+        self.blocks[-1].operations.append(msg)
 
     @tc.typecheck
     def cmd(self, operation: Emittable):
-        self.program.operations.append(operation)
+        self.blocks[-1].operations.append(operation)
 
     @tc.typecheck
     def note(self, msg: str):
-        if self.program:
-            self.program.operations.append(Note(msg))
+        if self.blocks and False:
+            self.blocks[-1].operations.append(Note(msg, self.indent))
 
     def start_program(self, program):
+        pass
+
+    def end_program(self, program):
         pass
 
     def emit_body(self, statement):
@@ -275,16 +306,16 @@ class IRGenerator:
 
     def emit_vars(self, variables):
         for var in variables:
-            self.cmd(Reserve(var.val))
+            self.blocks[-1].vars_.append(Variable(var.val))
 
     def emit_consts(self, consts):
         for name, val in consts.items():
-            self.cmd(Const(name.val, val.val))
+            self.blocks[-1].consts.append(Const(name.val, val.val))
 
-    def enter_procedure(self, proc):
-        self.cmd(Enter(proc.name))
+    def enter_block(self, block):
+        self.cmd(Enter())
 
-    def exit_procedure(self, proc):
+    def exit_block(self, block):
         self.cmd(Exit())
 
     def emit_call(self, node):
@@ -340,7 +371,7 @@ def ir(program):
 
     print('// {}'.format(gen.name))
     for operation in gen.operations:
-        print(operation)
+        print('// {}'.format(operation))
 
 
 def main():

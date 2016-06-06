@@ -23,8 +23,8 @@ from . import util
 
 
 class RISCVGenerator:
-    def __init__(self):
-        pass
+    def __init__(self, sink=sys.stdout):
+        self.sink = sink
 
     def dispatch(self, node):
         if isinstance(node, (list, tuple)):
@@ -107,10 +107,10 @@ class RISCVGenerator:
             self.cmd('{}();'.format(call.name))
 
     def cmd(self, msg: str):
-        print(msg)
+        print(msg, file=self.sink)
 
     def note(self, msg: str, indent=0):
-        print('// {}{}'.format('  ' * indent, msg))
+        print('// {}{}'.format('  ' * indent, msg), file=sys.sink)
 
 
 def codegen(program):

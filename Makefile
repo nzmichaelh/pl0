@@ -29,7 +29,7 @@ cxx: $(CXXSRC)
 	$<
 
 %.cc: %.pl0 $(wildcard *.py) Makefile
-	python3 -m pl0.codegen_c < $< > $@
+	python3 -m pl0.codegen_riscv < $< > $@
 
 %: %.cc $(wildcard lib/*)
 	$(CXX) $(CXXFLAGS) -o $@ $< lib/pl0.cc
